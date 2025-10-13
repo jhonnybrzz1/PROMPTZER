@@ -1,37 +1,44 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type Prompt, type InsertPrompt } from "@shared/schema";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getPrompt(id: string): Promise<Prompt | undefined>;
+  getAllPrompts(): Promise<Prompt[]>;
+  createPrompt(prompt: InsertPrompt): Promise<Prompt>;
+  deletePrompt(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private prompts: Map<string, Prompt>;
 
   constructor() {
-    this.users = new Map();
+    this.prompts = new Map();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getPrompt(id: string): Promise<Prompt | undefined> {
+    return this.prompts.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getAllPrompts(): Promise<Prompt[]> {
+    return Array.from(this.prompts.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createPrompt(insertPrompt: InsertPrompt): Promise<Prompt> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const prompt: Prompt = {
+      id,
+      content: insertPrompt.content,
+      templateId: insertPrompt.templateId ?? null,
+      createdAt: new Date(),
+    };
+    this.prompts.set(id, prompt);
+    return prompt;
+  }
+
+  async deletePrompt(id: string): Promise<void> {
+    this.prompts.delete(id);
   }
 }
 

@@ -1,22 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopBar from "@/components/TopBar";
 import TemplateLibrary, { Template } from "@/components/TemplateLibrary";
 import PromptEditor from "@/components/PromptEditor";
 import ValidationAlert, { ValidationType } from "@/components/ValidationAlert";
-import HistoryPanel, { HistoryEntry } from "@/components/HistoryPanel";
+import HistoryPanel from "@/components/HistoryPanel";
 import ResponseDisplay from "@/components/ResponseDisplay";
 import { Button } from "@/components/ui/button";
 import { Send, Eraser } from "lucide-react";
+import { usePrompts, useCreatePrompt, useDeletePrompt } from "@/hooks/usePrompts";
+import { useCodeStral } from "@/hooks/useCodeStral";
+import { useToast } from "@/hooks/use-toast";
+import type { Prompt } from "@shared/schema";
 
 export default function Home() {
   const [prompt, setPrompt] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [response, setResponse] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [validations, setValidations] = useState<
     Array<{ id: string; type: ValidationType; message: string }>
   >([]);
+  const [apiStatus, setApiStatus] = useState<"connected" | "disconnected">("disconnected");
+
+  const { data: prompts = [], isLoading: isLoadingPrompts } = usePrompts();
+  const createPrompt = useCreatePrompt();
+  const deletePrompt = useDeletePrompt();
+  const codeStral = useCodeStral();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const checkApiStatus = async () => {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        setApiStatus(data.connected ? "connected" : "disconnected");
+      } catch (error) {
+        setApiStatus("disconnected");
+      }
+    };
+
+    checkApiStatus();
+  }, []);
 
   const validatePrompt = (text: string) => {
     const newValidations: Array<{
@@ -41,6 +64,15 @@ export default function Home() {
       });
     }
 
+    const hasCodeBlock = text.includes("```") || text.includes("[Cole");
+    if (hasCodeBlock && text.length < 50) {
+      newValidations.push({
+        id: "incomplete",
+        type: "warning",
+        message: "Parece que você começou a adicionar código. Complete o prompt.",
+      });
+    }
+
     setValidations(newValidations);
   };
 
@@ -60,7 +92,6 @@ export default function Home() {
     setSelectedTemplate(null);
     setValidations([]);
     setResponse("");
-    console.log("Prompt cleared");
   };
 
   const handleSend = async () => {
@@ -75,19 +106,15 @@ export default function Home() {
       return;
     }
 
-    const newEntry: HistoryEntry = {
-      id: Date.now().toString(),
-      prompt,
-      timestamp: new Date(),
-    };
-    setHistory([newEntry, ...history]);
+    try {
+      await createPrompt.mutateAsync({
+        content: prompt,
+        templateId: selectedTemplate,
+      });
 
-    setIsLoading(true);
-    setResponse("");
-    
-    setTimeout(() => {
-      setResponse(`// Resposta simulada do CodeStral\n\nSeu prompt foi: "${prompt.substring(0, 50)}..."\n\nEsta é uma resposta de exemplo. Quando a API estiver configurada, você verá a resposta real do CodeStral aqui.`);
-      setIsLoading(false);
+      const result = await codeStral.mutateAsync(prompt);
+      setResponse(result.response);
+      
       setValidations([
         {
           id: "success",
@@ -95,35 +122,71 @@ export default function Home() {
           message: "Prompt enviado com sucesso!",
         },
       ]);
-    }, 1500);
 
-    console.log("Sending prompt to CodeStral:", prompt);
-  };
+      toast({
+        title: "Sucesso",
+        description: "Resposta recebida do CodeStral",
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || "Erro ao enviar prompt";
+      
+      setValidations([
+        {
+          id: "error",
+          type: "error",
+          message: errorMessage.includes("Chave da API")
+            ? "Configure a chave da API do CodeStral nas variáveis de ambiente"
+            : errorMessage,
+        },
+      ]);
 
-  const handleReuse = (entry: HistoryEntry) => {
-    setPrompt(entry.prompt);
-    validatePrompt(entry.prompt);
-    console.log("Reusing prompt:", entry);
-  };
-
-  const handleEdit = (entry: HistoryEntry) => {
-    setPrompt(entry.prompt);
-    validatePrompt(entry.prompt);
-    console.log("Editing prompt:", entry);
-  };
-
-  const handleDelete = (id: string) => {
-    setHistory(history.filter((entry) => entry.id !== id));
-    console.log("Deleted prompt:", id);
+      toast({
+        title: "Erro",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
   const dismissValidation = (id: string) => {
     setValidations(validations.filter((v) => v.id !== id));
   };
 
+  const historyEntries = prompts.map((p) => ({
+    id: p.id,
+    prompt: p.content,
+    timestamp: new Date(p.createdAt),
+  }));
+
+  const handleReuse = (entry: { id: string; prompt: string; timestamp: Date }) => {
+    const originalPrompt = prompts.find(p => p.id === entry.id);
+    if (originalPrompt) {
+      setPrompt(originalPrompt.content);
+      setSelectedTemplate(originalPrompt.templateId);
+      validatePrompt(originalPrompt.content);
+    }
+  };
+
+  const handleEdit = (entry: { id: string; prompt: string; timestamp: Date }) => {
+    const originalPrompt = prompts.find(p => p.id === entry.id);
+    if (originalPrompt) {
+      setPrompt(originalPrompt.content);
+      setSelectedTemplate(originalPrompt.templateId);
+      validatePrompt(originalPrompt.content);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    deletePrompt.mutate(id);
+    toast({
+      title: "Prompt deletado",
+      description: "O prompt foi removido do histórico",
+    });
+  };
+
   return (
     <div className="h-screen flex flex-col">
-      <TopBar apiStatus="disconnected" />
+      <TopBar apiStatus={apiStatus} />
 
       <div className="flex-1 flex overflow-hidden">
         <TemplateLibrary
@@ -151,9 +214,12 @@ export default function Home() {
                 <PromptEditor value={prompt} onChange={handlePromptChange} />
               </div>
 
-              {response && (
+              {(response || codeStral.isPending) && (
                 <div className="h-64">
-                  <ResponseDisplay response={response} isLoading={isLoading} />
+                  <ResponseDisplay
+                    response={response}
+                    isLoading={codeStral.isPending}
+                  />
                 </div>
               )}
             </div>
@@ -164,6 +230,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={handleClear}
+                disabled={codeStral.isPending}
                 data-testid="button-clear"
               >
                 <Eraser className="w-4 h-4 mr-2" />
@@ -172,18 +239,18 @@ export default function Home() {
               <Button
                 className="flex-1"
                 onClick={handleSend}
-                disabled={prompt.length < 20}
+                disabled={prompt.length < 20 || codeStral.isPending}
                 data-testid="button-send"
               >
                 <Send className="w-4 h-4 mr-2" />
-                Enviar para CodeStral
+                {codeStral.isPending ? "Enviando..." : "Enviar para CodeStral"}
               </Button>
             </div>
           </div>
         </div>
 
         <HistoryPanel
-          history={history}
+          history={historyEntries}
           onReuse={handleReuse}
           onEdit={handleEdit}
           onDelete={handleDelete}
