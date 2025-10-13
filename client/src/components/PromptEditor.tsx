@@ -14,7 +14,6 @@ export default function PromptEditor({
   onChange,
   placeholder = "Descreva sua solicitação aqui...",
 }: PromptEditorProps) {
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
@@ -28,20 +27,20 @@ export default function PromptEditor({
     const words = value.split(" ");
     const lastWord = words[words.length - 1];
     
-    if (lastWord && lastWord.length > 1 && value.endsWith(lastWord)) {
+    if (lastWord && lastWord.length >= 2 && !value.endsWith(" ")) {
       setSearchQuery(lastWord);
-      setShowSuggestions(true);
     } else {
-      setShowSuggestions(false);
       setSearchQuery("");
     }
   }, [value]);
+
+  const showSuggestions = searchQuery.length >= 2 && suggestions.length > 0;
 
   const handleSuggestionSelect = (suggestion: string) => {
     const words = value.split(" ");
     words[words.length - 1] = suggestion;
     onChange(words.join(" ") + " ");
-    setShowSuggestions(false);
+    setSearchQuery("");
     textareaRef.current?.focus();
   };
 
