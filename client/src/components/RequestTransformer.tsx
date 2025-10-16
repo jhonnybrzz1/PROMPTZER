@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Wand, RefreshCw } from "lucide-react";
+import { Wand, RefreshCw, Copy } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function RequestTransformer() {
   const [inputText, setInputText] = useState("");
@@ -62,11 +63,27 @@ Formate a resposta usando markdown com blocos de código apropriados.`;
           {transformedText && (
             <div className="mt-4">
               <h3 className="font-semibold mb-2">Prompt Transformado:</h3>
-              <Textarea
-                value={transformedText}
-                readOnly
-                className="min-h-[150px] bg-gray-100 dark:bg-gray-800"
-              />
+              <div className="relative">
+                <Textarea
+                  value={transformedText}
+                  readOnly
+                  className="min-h-[150px] bg-gray-100 dark:bg-gray-800"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(transformedText);
+                    toast({
+                      title: "Copiado!",
+                      description: "O prompt transformado foi copiado para a área de transferência.",
+                    });
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
