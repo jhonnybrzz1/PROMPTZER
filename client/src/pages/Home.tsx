@@ -7,7 +7,7 @@ import HistoryPanel from "@/components/HistoryPanel";
 import ResponseDisplay from "@/components/ResponseDisplay";
 import { Button } from "@/components/ui/button";
 import { Send, Eraser } from "lucide-react";
-import { usePrompts, useCreatePrompt, useDeletePrompt } from "@/hooks/usePrompts";
+import { usePrompts, useCreatePrompt, useDeletePrompt, useRatePrompt } from "@/hooks/usePrompts";
 import { useCodeStral } from "@/hooks/useCodeStral";
 import { useToast } from "@/hooks/use-toast";
 import type { Prompt } from "@shared/schema";
