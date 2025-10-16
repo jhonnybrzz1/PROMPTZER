@@ -5,6 +5,7 @@ import PromptEditor from "@/components/PromptEditor";
 import ValidationAlert, { ValidationType } from "@/components/ValidationAlert";
 import HistoryPanel from "@/components/HistoryPanel";
 import ResponseDisplay from "@/components/ResponseDisplay";
+import RequestTransformer from "@/components/RequestTransformer";
 import { Button } from "@/components/ui/button";
 import { Send, Eraser } from "lucide-react";
 import { usePrompts, useCreatePrompt, useDeletePrompt, useRatePrompt } from "@/hooks/usePrompts";
@@ -246,6 +247,7 @@ export default function Home() {
                 <Eraser className="w-4 h-4 mr-2" />
                 Limpar
               </Button>
+              <RequestTransformer />
               <Button
                 className="flex-1"
                 onClick={handleSend}
