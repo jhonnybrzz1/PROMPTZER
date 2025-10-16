@@ -6,6 +6,7 @@ export interface IStorage {
   getAllPrompts(): Promise<Prompt[]>;
   createPrompt(prompt: InsertPrompt): Promise<Prompt>;
   deletePrompt(id: string): Promise<void>;
+  ratePrompt(id: string, rating: number): Promise<Prompt | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -32,6 +33,8 @@ export class MemStorage implements IStorage {
       content: insertPrompt.content,
       templateId: insertPrompt.templateId ?? null,
       createdAt: new Date(),
+      rating: 0,
+      ratingCount: 0,
     };
     this.prompts.set(id, prompt);
     return prompt;
@@ -39,6 +42,24 @@ export class MemStorage implements IStorage {
 
   async deletePrompt(id: string): Promise<void> {
     this.prompts.delete(id);
+  }
+
+  async ratePrompt(id: string, rating: number): Promise<Prompt | undefined> {
+    const prompt = this.prompts.get(id);
+    if (!prompt) return undefined;
+
+    const newRating = prompt.ratingCount === 0
+      ? rating
+      : (prompt.rating * prompt.ratingCount + rating) / (prompt.ratingCount + 1);
+
+    const updatedPrompt = {
+      ...prompt,
+      rating: Math.round(newRating * 2) / 2, // Round to nearest 0.5
+      ratingCount: prompt.ratingCount + 1,
+    };
+
+    this.prompts.set(id, updatedPrompt);
+    return updatedPrompt;
   }
 }
 

@@ -5,6 +5,7 @@ export interface HistoryEntry {
   id: string;
   prompt: string;
   timestamp: Date;
+  rating?: number;
 }
 
 interface HistoryPanelProps {
@@ -12,6 +13,7 @@ interface HistoryPanelProps {
   onReuse: (entry: HistoryEntry) => void;
   onEdit: (entry: HistoryEntry) => void;
   onDelete: (id: string) => void;
+  onRate?: (id: string, rating: number) => void;
 }
 
 export default function HistoryPanel({
@@ -19,6 +21,7 @@ export default function HistoryPanel({
   onReuse,
   onEdit,
   onDelete,
+  onRate,
 }: HistoryPanelProps) {
   return (
     <div className="w-[320px] border-l bg-card flex flex-col h-full">
@@ -39,6 +42,7 @@ export default function HistoryPanel({
                 onReuse={() => onReuse(entry)}
                 onEdit={() => onEdit(entry)}
                 onDelete={() => onDelete(entry.id)}
+                onRate={onRate ? (rating) => onRate(entry.id, rating) : undefined}
               />
             ))
           ) : (

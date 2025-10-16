@@ -30,3 +30,15 @@ export function useDeletePrompt() {
     },
   });
 }
+
+export function useRatePrompt() {
+  return useMutation({
+    mutationFn: async ({ id, rating }: { id: string; rating: number }) => {
+      const res = await apiRequest("POST", `/api/prompts/${id}/rate`, { rating });
+      return res.json() as Promise<Prompt>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/prompts"] });
+    },
+  });
+}

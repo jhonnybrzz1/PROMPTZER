@@ -1,4 +1,4 @@
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -7,11 +7,15 @@ export const prompts = pgTable("prompts", {
   content: text("content").notNull(),
   templateId: varchar("template_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  rating: integer("rating").default(0),
+  ratingCount: integer("rating_count").default(0),
 });
 
 export const insertPromptSchema = createInsertSchema(prompts).omit({
   id: true,
   createdAt: true,
+  rating: true,
+  ratingCount: true,
 });
 
 export type InsertPrompt = z.infer<typeof insertPromptSchema>;

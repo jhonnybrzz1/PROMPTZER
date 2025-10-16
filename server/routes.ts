@@ -44,6 +44,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/prompts/:id/rate", async (req, res) => {
+    try {
+      const { rating } = req.body;
+      if (typeof rating !== "number" || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: "Avaliação deve ser entre 1 e 5" });
+      }
+
+      const updatedPrompt = await storage.ratePrompt(req.params.id, rating);
+      if (!updatedPrompt) {
+        return res.status(404).json({ error: "Prompt não encontrado" });
+      }
+
+      res.json(updatedPrompt);
+    } catch (error) {
+      console.error("Error rating prompt:", error);
+      res.status(500).json({ error: "Erro ao avaliar prompt" });
+    }
+  });
+
   app.post("/api/codestral/generate", async (req, res) => {
     try {
       const { prompt } = sendPromptSchema.parse(req.body);

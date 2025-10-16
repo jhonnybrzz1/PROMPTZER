@@ -24,6 +24,7 @@ export default function Home() {
   const { data: prompts = [], isLoading: isLoadingPrompts } = usePrompts();
   const createPrompt = useCreatePrompt();
   const deletePrompt = useDeletePrompt();
+  const ratePrompt = useRatePrompt();
   const codeStral = useCodeStral();
   const { toast } = useToast();
 
@@ -156,6 +157,7 @@ export default function Home() {
     id: p.id,
     prompt: p.content,
     timestamp: new Date(p.createdAt),
+    rating: p.rating,
   }));
 
   const handleReuse = (entry: { id: string; prompt: string; timestamp: Date }) => {
@@ -181,6 +183,14 @@ export default function Home() {
     toast({
       title: "Prompt deletado",
       description: "O prompt foi removido do histórico",
+    });
+  };
+
+  const handleRate = (id: string, rating: number) => {
+    ratePrompt.mutate({ id, rating });
+    toast({
+      title: "Prompt avaliado",
+      description: `Você deu ${rating} estrelas para este prompt`,
     });
   };
 
@@ -254,6 +264,7 @@ export default function Home() {
           onReuse={handleReuse}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          onRate={handleRate}
         />
       </div>
     </div>
