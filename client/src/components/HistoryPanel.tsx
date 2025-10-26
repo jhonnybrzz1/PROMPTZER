@@ -22,9 +22,10 @@ export default function HistoryPanel({
   onEdit,
   onDelete,
   onRate,
+  onSelect,
 }: HistoryPanelProps) {
   return (
-    <div className="w-[320px] border-l bg-card flex flex-col h-full">
+    <div className="w-full md:w-[320px] border-l bg-card flex flex-col h-full">
       <div className="p-4 border-b">
         <h2 className="font-semibold">Histórico</h2>
         <p className="text-xs text-muted-foreground mt-1">
@@ -36,14 +37,19 @@ export default function HistoryPanel({
         <div className="p-4 space-y-3">
           {history.length > 0 ? (
             history.map((entry) => (
-              <HistoryItem
+              <div
                 key={entry.id}
-                {...entry}
-                onReuse={() => onReuse(entry)}
-                onEdit={() => onEdit(entry)}
-                onDelete={() => onDelete(entry.id)}
-                onRate={onRate ? (rating) => onRate(entry.id, rating) : undefined}
-              />
+                onClick={() => onSelect && onSelect(entry)} // Adicionado para permitir seleção de itens
+                className="cursor-pointer hover:bg-gray-100 rounded-md p-2 transition-colors"
+              >
+                <HistoryItem
+                  {...entry}
+                  onReuse={() => onReuse(entry)}
+                  onEdit={() => onEdit(entry)}
+                  onDelete={() => onDelete(entry.id)}
+                  onRate={onRate ? (rating) => onRate(entry.id, rating) : undefined}
+                />
+              </div>
             ))
           ) : (
             <div className="text-center py-12">
