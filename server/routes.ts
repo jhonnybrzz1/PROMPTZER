@@ -4,9 +4,9 @@ import { storage } from "./storage";
 import {
   insertPromptSchema,
   sendPromptSchema,
-  type CodeStralResponse,
 } from "@shared/schema";
 import { ZodError } from "zod";
+import { promptzerService } from "./promptzer-service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/prompts", async (req, res) => {
@@ -104,19 +104,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const data = await response.json();
-      const codeStralResponse: CodeStralResponse = {
-        response: data.choices[0]?.message?.content || "Sem resposta",
-        model: data.model,
-        usage: data.usage
-          ? {
-              promptTokens: data.usage.prompt_tokens,
-              completionTokens: data.usage.completion_tokens,
-              totalTokens: data.usage.total_tokens,
-            }
-          : undefined,
-      };
+      const rawAiResponse = data.choices[0]?.message?.content || "Sem resposta";
 
-      res.json(codeStralResponse);
+      // Process through Promptzer Service (High-Level Gate)
+      const highLevelResponse = await promptzerService.generateHighLevelArtifact(
+        prompt,
+        rawAiResponse,
+        {
+          model: data.model,
+          usage: data.usage ? {
+            promptTokens: data.usage.prompt_tokens,
+            completionTokens: data.usage.completion_tokens,
+            totalTokens: data.usage.total_tokens,
+          } : undefined
+        }
+      );
+
+      res.json(highLevelResponse);
     } catch (error) {
       if (error instanceof ZodError) {
         res.status(400).json({ error: "Prompt inválido", details: error.errors });
