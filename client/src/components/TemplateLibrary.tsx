@@ -115,17 +115,15 @@ export default function TemplateLibrary({
   );
 
   return (
-    <div className="w-[320px] border-r bg-card flex flex-col h-full">
-      <div className="p-4 border-b">
-        <h2 className="font-semibold mb-3">Templates</h2>
-
+    <div className="flex flex-col h-full bg-transparent">
+      <div className="p-4 border-b border-white/5">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar templates..."
+            placeholder="Search templates..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 bg-white/5 border-white/10"
             data-testid="input-template-search"
           />
         </div>
@@ -133,8 +131,8 @@ export default function TemplateLibrary({
         <div className="flex items-center gap-2">
           <ListFilter className="w-4 h-4 text-muted-foreground" />
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Filtrar por categoria" />
+            <SelectTrigger className="w-full bg-white/5 border-white/10">
+              <SelectValue placeholder="Filter category" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
@@ -148,7 +146,7 @@ export default function TemplateLibrary({
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-4 grid grid-cols-1 gap-3">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
           {filteredTemplates.length > 0 ? (
             filteredTemplates.map((template) => (
               <TemplateCard
@@ -159,8 +157,8 @@ export default function TemplateLibrary({
               />
             ))
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhum template encontrado
+            <p className="text-sm text-muted-foreground text-center py-12">
+              No templates found for this criteria.
             </p>
           )}
         </div>
